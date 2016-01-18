@@ -4,6 +4,15 @@ var canvas,
 	fontLoaded = $.Deferred(),
 	canvasLoaded = $.Deferred();
 
+
+var dragIndex;
+var dragging;
+var mouseX;
+var mouseY;
+var dragHoldX;
+var dragHoldY;
+var backgrounds = [];
+
 // $(init);
 
 function init() {
@@ -15,6 +24,8 @@ function init() {
     ctx.imageSmoothingEnabled = false;
 
     metrics();
+
+    canvas.addEventListener("mousedown", mouseDownListener, false);
 
     canvasLoaded.resolve();
 }
@@ -34,17 +45,126 @@ function metrics() {
 }
 
 
-$.when(fontLoaded, canvasLoaded).done(drawText, drawScene);
+$.when(fontLoaded, canvasLoaded).done(makeScene);
 
-function drawText() {
-	ctx.font = "100 106px Raleway";
-	ctx.fillStyle = "white";
-	ctx.textAlign = "center";
-	// ctx.fillText("HELLO WORLD", canvas.width/2, canvas.height/2)
+var control;
+var timer;
+var easeAmount = 0.2;
+
+//We are going to pay attention to the layering order of the objects so that if a mouse down occurs over more than object,
+//only the topmost one will be dragged.
+function mouseDownListener(evt) {
+    var highestIndex = -1;
+
+    //getting mouse position correctly, being mindful of resizing that may have occured in the browser:
+    var bRect = canvas.getBoundingClientRect();
+    mouseX = (evt.clientX - bRect.left)*(canvas.width/bRect.width);
+    mouseY = (evt.clientY - bRect.top)*(canvas.height/bRect.height);
+
+    //find which shape was clicked
+    if (control.hitTest(mouseX, mouseY)) {
+        dragging = true;
+
+        //We will pay attention to the point on the object where the mouse is "holding" the object:
+        dragHoldX = mouseX - control.x;
+        dragHoldY = mouseY - control.y;
+
+        targetX = mouseX - dragHoldX;
+        targetY = mouseY - dragHoldY;
+            
+        //start timer
+        timer = setInterval(onTimerTick, 1000/30);
+    }
+
+    if (dragging) {
+        window.addEventListener("mousemove", mouseMoveListener, false);
+    }
+
+    canvas.removeEventListener("mousedown", mouseDownListener, false);
+    window.addEventListener("mouseup", mouseUpListener, false);
+        
+    //code below prevents the mouse down from having an effect on the main browser window:
+    if (evt.preventDefault) {
+        evt.preventDefault();
+    } //standard
+    else if (evt.returnValue) {
+        evt.returnValue = false;
+    } //older IE
+    return false;
+}
+
+function onTimerTick() {
+    /*
+    Because of reordering, the dragging shape is the last one in the array.
+    The code below moves this shape only a portion of the distance towards the current "target" position, and 
+    because this code is being executed inside a function called by a timer, the object will continue to
+    move closer and closer to the target position.
+    The amount to move towards the target position is set in the parameter 'easeAmount', which should range between
+    0 and 1. The target position is set by the mouse position as it is dragging.        
+    */
+    control.x = control.x + easeAmount*(targetX - control.x);
+    control.y = control.y + easeAmount*(targetY - control.y);
+    
+    //stop the timer when the target position is reached (close enough)
+    if ((!dragging) && (Math.abs(control.x - targetX) < 0.1) && (Math.abs(control.y - targetY) < 0.1)) {
+        control.x = targetX;
+        control.y = targetY;
+        //stop timer:
+        clearInterval(timer);
+    }
+
+    drawScene();
 }
 
 
-function drawScene() {
+function mouseUpListener(evt) {
+    canvas.addEventListener("mousedown", mouseDownListener, false);
+    window.removeEventListener("mouseup", mouseUpListener, false);
+    if (dragging) {
+        dragging = false;
+        window.removeEventListener("mousemove", mouseMoveListener, false);
+    }
+}
+
+function mouseMoveListener(evt) {
+    var posX;
+    // var posY;
+    var rad = control.radius;
+
+    //Control can move around in the middle half of the canvas
+    var minX = canvas.width / 4 + rad;
+    var maxX = (canvas.width * 3 / 4) - rad;
+    // var minY = rad;
+    // var maxY = canvas.height - rad;
+    //getting mouse position correctly 
+    var bRect = canvas.getBoundingClientRect();
+    mouseX = (evt.clientX - bRect.left)*(canvas.width/bRect.width);
+    // mouseY = (evt.clientY - bRect.top)*(canvas.height/bRect.height);
+    
+    //clamp x and y positions to prevent object from dragging outside of canvas
+    posX = mouseX - dragHoldX;
+    posX = (posX < minX) ? minX : ((posX > maxX) ? maxX : posX);
+    // posY = mouseY - dragHoldY;
+    // posY = (posY < minY) ? minY : ((posY > maxY) ? maxY : posY);
+
+    targetX = posX;
+    // targetY = posY;
+    
+    // drawScene();
+}
+
+function drawText() {
+	ctx.font = "100 132px Raleway";
+	ctx.fillStyle = "white";
+	ctx.textAlign = "center";
+	ctx.fillText("BLISS ON TAP", canvas.width/2, canvas.height/3)
+}
+
+
+
+function makeScene() {
+    control = new Control(canvas.width / 2, canvas.height / 10);
+
 	// var scene = new THREE.Scene();
 	// camera = new THREE.PerspectiveCamera( 75, canvas.width / canvas.height, 0.1, 1000 );
 	// var renderer;
@@ -61,13 +181,31 @@ function drawScene() {
 
 	// camera.position.z = 25;
 
-	// function render() {
-		// requestAnimationFrame( render );
+	function render() {
+		requestAnimationFrame( render );
 		// renderer.render( scene, camera );
-	// }
+        drawScene();
+	}
 	// render();
 
-	setupBackgrounds();
+    setupBackgrounds();
+
+    drawScene();
+}
+
+function drawScene() {
+    //bg
+    ctx.fillStyle = "#9DE0AD";
+    ctx.fillRect(0,0,canvas.width,canvas.height);
+    control.drawToContext(ctx);
+
+    drawText();
+
+    for (var i = 0; i < backgrounds.length; i++) {
+        for (var j = 0; j < backgrounds[i].Positions.length; j++) {
+            drawBackground(backgrounds[i], backgrounds[i].Positions[j]);
+        }
+    }
 }
 
 
@@ -143,9 +281,7 @@ function setupBackgrounds() {
 
     for (var i = 0; i < BackgroundList.length; i++) {
         var background = createBackground(BackgroundList[i]);
-        for (var j = 0; j < background.Positions.length; j++) {
-        	drawBackground(background, background.Positions[j]);
-        }
+        backgrounds.push(background);
     }
 }
 
