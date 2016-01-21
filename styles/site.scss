@@ -1,0 +1,30 @@
+html {
+
+	body {
+		margin: 0;
+		padding: 0;
+		height: 100%;
+		width: 100%;
+		
+	 	 font-smoothing: antialiased;
+		
+		color: #fff;
+		overflow: hidden;
+	}
+
+
+	canvas {
+	    display: block;
+	}
+
+	p {
+		
+	  border-radius: 3px;
+	  box-shadow: 1px 1px 1px #fff;
+	}
+
+	*.unselectable {
+	   user-select: none;
+	}
+
+}
