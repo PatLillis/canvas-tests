@@ -1,18 +1,37 @@
-html body {
-  margin: 0;
-  padding: 0;
-  height: 100%;
-  width: 100%;
-  font-smoothing: antialiased;
-  color: #fff;
-  overflow: hidden; }
-html canvas {
-  display: block; }
-html p {
-  border-radius: 3px;
-  box-shadow: 1px 1px 1px #fff; }
-html *.unselectable {
-  -webkit-user-select: none;
-     -moz-user-select: none;
-      -ms-user-select: none;
-          user-select: none; }
+
+html {
+	height: 100%;
+}
+
+
+body {
+	margin: 0;
+	padding: 0;
+	height: 100%;
+	width: 100%;
+	
+	-webkit-font-smoothing: antialiased;
+    -moz-font-smoothing: antialiased;
+    -o-font-smoothing: antialiased;
+	
+	color: #fff;
+	overflow: hidden;
+}
+
+
+canvas {
+    display: block;
+}
+
+*.unselectable {
+   -moz-user-select: -moz-none;
+   -khtml-user-select: none;
+   -webkit-user-select: none;
+
+   /*
+     Introduced in IE 10.
+     See http://ie.microsoft.com/testdrive/HTML5/msUserSelect/
+   */
+   -ms-user-select: none;
+   user-select: none;
+} 
