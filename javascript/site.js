@@ -1,8 +1,122 @@
+if ( ! Detector.webgl ) Detector.addGetWebGLMessage();
+
+            var stats;
+
+
+            var fontLoaded = $.Deferred();
+
+            var camera, controls, scene, renderer;
+
+            // $(init);
+
+            function init_example() {
+
+                scene = new THREE.Scene();
+                scene.fog = new THREE.FogExp2( 0xcccccc, 0.002 );
+
+                renderer = new THREE.WebGLRenderer();
+                renderer.setClearColor( scene.fog.color );
+                renderer.setPixelRatio( window.devicePixelRatio );
+                renderer.setSize( window.innerWidth, window.innerHeight );
+
+                var $container = $('#container');
+                var container = $container.get(0);
+                container.appendChild( renderer.domElement );
+
+                camera = new THREE.PerspectiveCamera( 60, window.innerWidth / window.innerHeight, 1, 1000 );
+                camera.position.z = 500;
+
+                controls = new THREE.OrbitControls( camera, renderer.domElement );
+                //controls.addEventListener( 'change', render ); // add this only if there is no animation loop (requestAnimationFrame)
+                controls.enableDamping = true;
+                controls.dampingFactor = 0.25;
+                controls.enableZoom = false;
+
+                // world
+
+                var geometry = new THREE.CylinderGeometry( 0, 10, 30, 4, 1 );
+                var material =  new THREE.MeshPhongMaterial( { color:0xffffff, shading: THREE.FlatShading } );
+
+                for ( var i = 0; i < 500; i ++ ) {
+
+                    var mesh = new THREE.Mesh( geometry, material );
+                    mesh.position.x = ( Math.random() - 0.5 ) * 1000;
+                    mesh.position.y = ( Math.random() - 0.5 ) * 1000;
+                    mesh.position.z = ( Math.random() - 0.5 ) * 1000;
+                    mesh.updateMatrix();
+                    mesh.matrixAutoUpdate = false;
+                    scene.add( mesh );
+
+                }
+
+                // lights
+
+                light = new THREE.DirectionalLight( 0xffffff );
+                light.position.set( 1, 1, 1 );
+                scene.add( light );
+
+                light = new THREE.DirectionalLight( 0x002288 );
+                light.position.set( -1, -1, -1 );
+                scene.add( light );
+
+                light = new THREE.AmbientLight( 0x222222 );
+                scene.add( light );
+
+                //
+
+                stats = new Stats();
+                stats.domElement.style.position = 'absolute';
+                stats.domElement.style.top = '0px';
+                stats.domElement.style.zIndex = 100;
+                container.appendChild( stats.domElement );
+
+                //
+
+                window.addEventListener( 'resize', onWindowResize, false );
+
+
+                animate();
+            }
+
+            function onWindowResize() {
+
+                camera.aspect = window.innerWidth / window.innerHeight;
+                camera.updateProjectionMatrix();
+
+                renderer.setSize( window.innerWidth, window.innerHeight );
+
+            }
+
+            function animate() {
+
+                requestAnimationFrame( animate );
+
+                controls.update(); // required if controls.enableDamping = true, or if controls.autoRotate = true
+
+                stats.update();
+
+                render();
+
+            }
+
+            function render() {
+
+                renderer.render( scene, camera );
+
+            }
+
+
+
+
 var canvas,
 	$canvas,
 	ctx,
 	fontLoaded = $.Deferred(),
 	canvasLoaded = $.Deferred();
+
+
+
+var camera, controls, scene, renderer;
 
 
 var dragIndex;
@@ -40,6 +154,16 @@ function metrics() {
     	width: width + 'px',
     	height: height + 'px'
     });
+
+    if (camera) {
+        camera.aspect = canvas.width / canvas.height;
+        camera.updateProjectionMatrix();
+    }
+
+    if (renderer)
+        renderer.setSize( canvas.width, canvas.height );
+
+
     console.log("width: " + width);
     console.log("height: " + height);
 }
@@ -63,25 +187,27 @@ function mouseDownListener(evt) {
 
     //find which shape was clicked
     if (control.hitTest(mouseX, mouseY)) {
-        dragging = true;
+        controls.enabled = true;
+    // alert('Mouse Up!')
+        // dragging = true;
 
-        //We will pay attention to the point on the object where the mouse is "holding" the object:
-        dragHoldX = mouseX - control.x;
-        dragHoldY = mouseY - control.y;
+        // //We will pay attention to the point on the object where the mouse is "holding" the object:
+        // dragHoldX = mouseX - control.x;
+        // dragHoldY = mouseY - control.y;
 
-        targetX = mouseX - dragHoldX;
-        targetY = mouseY - dragHoldY;
+        // targetX = mouseX - dragHoldX;
+        // targetY = mouseY - dragHoldY;
             
-        //start timer
-        timer = setInterval(onTimerTick, 1000/30);
+        // //start timer
+        // timer = setInterval(onTimerTick, 1000/30);
     }
 
-    if (dragging) {
-        window.addEventListener("mousemove", mouseMoveListener, false);
-    }
+    // if (dragging) {
+    //     window.addEventListener("mousemove", mouseMoveListener, false);
+    // }
 
     canvas.removeEventListener("mousedown", mouseDownListener, false);
-    window.addEventListener("mouseup", mouseUpListener, false);
+    canvas.addEventListener("mouseup", mouseUpListener, false);
         
     //code below prevents the mouse down from having an effect on the main browser window:
     if (evt.preventDefault) {
@@ -93,65 +219,67 @@ function mouseDownListener(evt) {
     return false;
 }
 
-function onTimerTick() {
-    /*
-    Because of reordering, the dragging shape is the last one in the array.
-    The code below moves this shape only a portion of the distance towards the current "target" position, and 
-    because this code is being executed inside a function called by a timer, the object will continue to
-    move closer and closer to the target position.
-    The amount to move towards the target position is set in the parameter 'easeAmount', which should range between
-    0 and 1. The target position is set by the mouse position as it is dragging.        
-    */
-    control.x = control.x + easeAmount*(targetX - control.x);
-    control.y = control.y + easeAmount*(targetY - control.y);
+// function onTimerTick() {
     
-    //stop the timer when the target position is reached (close enough)
-    if ((!dragging) && (Math.abs(control.x - targetX) < 0.1) && (Math.abs(control.y - targetY) < 0.1)) {
-        control.x = targetX;
-        control.y = targetY;
-        //stop timer:
-        clearInterval(timer);
-    }
+//     Because of reordering, the dragging shape is the last one in the array.
+//     The code below moves this shape only a portion of the distance towards the current "target" position, and 
+//     because this code is being executed inside a function called by a timer, the object will continue to
+//     move closer and closer to the target position.
+//     The amount to move towards the target position is set in the parameter 'easeAmount', which should range between
+//     0 and 1. The target position is set by the mouse position as it is dragging.        
+    
+//     control.x = control.x + easeAmount*(targetX - control.x);
+//     control.y = control.y + easeAmount*(targetY - control.y);
+    
+//     //stop the timer when the target position is reached (close enough)
+//     if ((!dragging) && (Math.abs(control.x - targetX) < 0.1) && (Math.abs(control.y - targetY) < 0.1)) {
+//         control.x = targetX;
+//         control.y = targetY;
+//         //stop timer:
+//         clearInterval(timer);
+//     }
 
-    drawScene();
-}
+//     drawScene();
+// }
 
 
 function mouseUpListener(evt) {
+    // alert('Mouse Up!')
     canvas.addEventListener("mousedown", mouseDownListener, false);
-    window.removeEventListener("mouseup", mouseUpListener, false);
-    if (dragging) {
-        dragging = false;
-        window.removeEventListener("mousemove", mouseMoveListener, false);
-    }
+    canvas.removeEventListener("mouseup", mouseUpListener, false);
+    controls.enabled = false;
+    // if (dragging) {
+    //     dragging = false;
+    //     window.removeEventListener("mousemove", mouseMoveListener, false);
+    // }
 }
 
-function mouseMoveListener(evt) {
-    var posX;
-    // var posY;
-    var rad = control.radius;
+// function mouseMoveListener(evt) {
+//     var posX;
+//     // var posY;
+//     var rad = control.radius;
 
-    //Control can move around in the middle half of the canvas
-    var minX = canvas.width / 4 + rad;
-    var maxX = (canvas.width * 3 / 4) - rad;
-    // var minY = rad;
-    // var maxY = canvas.height - rad;
-    //getting mouse position correctly 
-    var bRect = canvas.getBoundingClientRect();
-    mouseX = (evt.clientX - bRect.left)*(canvas.width/bRect.width);
-    // mouseY = (evt.clientY - bRect.top)*(canvas.height/bRect.height);
+//     //Control can move around in the middle half of the canvas
+//     var minX = canvas.width / 4 + rad;
+//     var maxX = (canvas.width * 3 / 4) - rad;
+//     // var minY = rad;
+//     // var maxY = canvas.height - rad;
+//     //getting mouse position correctly 
+//     var bRect = canvas.getBoundingClientRect();
+//     mouseX = (evt.clientX - bRect.left)*(canvas.width/bRect.width);
+//     // mouseY = (evt.clientY - bRect.top)*(canvas.height/bRect.height);
     
-    //clamp x and y positions to prevent object from dragging outside of canvas
-    posX = mouseX - dragHoldX;
-    posX = (posX < minX) ? minX : ((posX > maxX) ? maxX : posX);
-    // posY = mouseY - dragHoldY;
-    // posY = (posY < minY) ? minY : ((posY > maxY) ? maxY : posY);
+//     //clamp x and y positions to prevent object from dragging outside of canvas
+//     posX = mouseX - dragHoldX;
+//     posX = (posX < minX) ? minX : ((posX > maxX) ? maxX : posX);
+//     // posY = mouseY - dragHoldY;
+//     // posY = (posY < minY) ? minY : ((posY > maxY) ? maxY : posY);
 
-    targetX = posX;
-    // targetY = posY;
+//     targetX = posX;
+//     // targetY = posY;
     
-    // drawScene();
-}
+//     // drawScene();
+// }
 
 function drawText() {
 	ctx.font = "100 132px Raleway";
@@ -165,48 +293,120 @@ function drawText() {
 function makeScene() {
     control = new Control(canvas.width / 2, canvas.height / 10);
 
-	// var scene = new THREE.Scene();
-	// camera = new THREE.PerspectiveCamera( 75, canvas.width / canvas.height, 0.1, 1000 );
-	// var renderer;
+                scene = new THREE.Scene();
+                // scene.fog = new THREE.FogExp2( 0xcccccc, 0.002 );
 
-	// if (canvas.getContext("webgl") || canvas.getContext("experimental-webgl"))
-		// renderer = new THREE.WebGLRenderer({ canvas: canvas });
-	// else
-		// renderer = new THREE.CanvasRenderer({ canvas: canvas });
+                renderer = new THREE.CanvasRenderer({ canvas: canvas });
+                renderer.setClearColor( '#9DE0AD' );
+                renderer.setPixelRatio( window.devicePixelRatio );
+                renderer.setSize( window.innerWidth, window.innerHeight );
 
-	// renderer.setSize( canvas.width, canvas.height );
+                // var $container = $('#container');
+                // var container = $container.get(0);
+                // container.appendChild( renderer.domElement );
 
-	// scene.add(camera);
-// /	scene.add(MasterObject);
+                camera = new THREE.PerspectiveCamera( 60, window.innerWidth / window.innerHeight, 1, 1000 );
+                camera.position.z = 500;
 
-	// camera.position.z = 25;
+                controls = new THREE.OrbitControls( camera, renderer.domElement );
+                //controls.addEventListener( 'change', render ); // add this only if there is no animation loop (requestAnimationFrame)
+                controls.enabled = false;
+                controls.enableDamping = true;
+                controls.dampingFactor = 0.25;
+                controls.enableZoom = false;
+                controls.enablePan = false;
+                controls.enableKeys = false;
+                controls.maxPolarAngle = Math.PI / 2;
+                controls.minPolarAngle = Math.PI / 2;
+                controls.minAzimuthAngle = -Math.PI / 8;
+                controls.maxAzimuthAngle = Math.PI / 8;
 
-	function render() {
-		requestAnimationFrame( render );
-		// renderer.render( scene, camera );
-        drawScene();
-	}
-	// render();
+                // If set, must be a sub-interval of the interval [ - Math.PI, Math.PI ].
+
+                // world
+
+                var geometry = new THREE.CylinderGeometry( 0, 10, 30, 4, 1 );
+                var material =  new THREE.MeshPhongMaterial( { color:0xffffff, shading: THREE.FlatShading } );
+
+                for ( var i = 0; i < 500; i ++ ) {
+
+                    var mesh = new THREE.Mesh( geometry, material );
+                    mesh.position.x = ( Math.random() - 0.5 ) * 1000;
+                    mesh.position.y = ( Math.random() - 0.5 ) * 1000;
+                    mesh.position.z = ( Math.random() - 0.5 ) * 1000;
+                    mesh.updateMatrix();
+                    mesh.matrixAutoUpdate = false;
+                    scene.add( mesh );
+
+                }
+
+                // lights
+
+                light = new THREE.DirectionalLight( 0xffffff );
+                light.position.set( 1, 1, 1 );
+                scene.add( light );
+
+                light = new THREE.DirectionalLight( 0x002288 );
+                light.position.set( -1, -1, -1 );
+                scene.add( light );
+
+                light = new THREE.AmbientLight( 0x222222 );
+                scene.add( light );
+
+                //
+
+                stats = new Stats();
+                stats.domElement.style.position = 'absolute';
+                stats.domElement.style.top = '0px';
+                stats.domElement.style.zIndex = 100;
+                $('body').append( stats.domElement );
+
+                //
+
+                // window.addEventListener( 'resize', onWindowResize, false );
 
     setupBackgrounds();
 
+	render();
+
+}
+
+
+
+
+function render() {
+    requestAnimationFrame( render );
+
+    controls.update(); // required if controls.enableDamping = true, or if controls.autoRotate = true       
+
+    stats.update();
+    ctx.fillStyle = "#9DE0AD";
+    ctx.fillRect(0,0,canvas.width,canvas.height);
+    renderer.render( scene, camera );
     drawScene();
 }
 
+
+
 function drawScene() {
     //bg
-    ctx.fillStyle = "#9DE0AD";
-    ctx.fillRect(0,0,canvas.width,canvas.height);
     control.drawToContext(ctx);
 
     drawText();
 
     for (var i = 0; i < backgrounds.length; i++) {
         for (var j = 0; j < backgrounds[i].Positions.length; j++) {
-            drawBackground(backgrounds[i], backgrounds[i].Positions[j]);
+            // drawBackground(backgrounds[i], backgrounds[i].Positions[j]);
         }
     }
 }
+
+
+function setupThreeJsControls() {
+
+}
+
+
 
 
 //Backgrounds area scaled assuming a 1000 by 1000 px area
@@ -306,17 +506,28 @@ function drawBackground(background, startPos) {
 
     ctx.beginPath();
 
-    //Scale to 1000x1000px size
-    var scale = new Point(canvas.width / 1000, canvas.height / 1000);
+    //Scale from 1000 x 1000 px to canvas size (but keep aspect ratio)
+    //but we will make 500, 500 == the middle of the canvas.
+    var scale;
+    var offset;
 
-    ctx.moveTo(startX + points[0].x * scale.x, startY + points[0].y * scale.y);
-
-    for (var a = 1; a < points.length; a++) {
-        ctx.lineTo(startX + points[a].x * scale.x, startY + points[a].y * scale.y);
+    if (canvas.width > canvas.height) {
+        scale = new Point(canvas.width / 1000, canvas.width / 1000);
+        offset = new Point(0, -(canvas.width - canvas.height) / 2);
+    }
+    else {
+        scale = new Point(canvas.height / 1000, canvas.height / 1000);
+        offset = new Point(-(canvas.height - canvas.width) / 2, 0);
     }
 
-    ctx.lineTo(startX + 1500 * scale.x, startY + 1500 * scale.y);
-    ctx.lineTo(startX - 1500 * scale.x, startY + 1500 * scale.y);
+    ctx.moveTo(startX + offset.x + points[0].x * scale.x, startY + offset.y + points[0].y * scale.y);
+
+    for (var a = 1; a < points.length; a++) {
+        ctx.lineTo(startX + offset.x + points[a].x * scale.x, startY + offset.y + points[a].y * scale.y);
+    }
+
+    ctx.lineTo(startX + offset.x + 1500 * scale.x, startY + offset.y + 1500 * scale.y);
+    ctx.lineTo(startX - offset.x + 1500 * scale.x, startY + offset.y + 1500 * scale.y);
 
     ctx.closePath();
 
