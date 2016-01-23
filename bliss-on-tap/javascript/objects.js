@@ -32,6 +32,13 @@ function RGBA(r, g, b, a) {
     }
 }
 
+function Background(speed, sprite, color) {
+    this.Speed = speed || 1.0;
+    this.Sprite = sprite || new Sprite;
+    this.Color = color || new RGBA(Math.round(255 * Math.random()),Math.round(255 * Math.random()),Math.round(255 * Math.random()),1);
+}
+
+
 function Control(x, y) {
     this.x = x || 0;
     this.y = y || 0;

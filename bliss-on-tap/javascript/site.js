@@ -4,16 +4,14 @@ var canvas,
     fontLoaded = $.Deferred(),
     canvasLoaded = $.Deferred();
 
+var control;
+var easeAmount = 0.05;
 
-var dragIndex;
 var dragging;
 var mouseX;
 var mouseY;
 var dragHoldX;
-var dragHoldY;
 var backgrounds = [];
-
-// $(init);
 
 function init() {
     $canvas = $("#cnvs");
@@ -30,6 +28,7 @@ function init() {
     canvasLoaded.resolve();
 }
 
+//Re-size
 function metrics() {
     const width = window.innerWidth;
     const height = window.innerHeight;
@@ -44,17 +43,24 @@ function metrics() {
     console.log("height: " + height);
 }
 
-
+//Can't draw until both canvas and fonts are loaded.
 $.when(fontLoaded, canvasLoaded).done(makeScene);
 
-var control;
-var timer;
-var easeAmount = 0.1;
+
+function makeScene() {
+    //Set up control
+    control = new Control(canvas.width / 2, canvas.height / 10);
+
+    //Set up backgrounds
+    setupBackgrounds();
+
+    //Draw once initially
+    drawScene();
+}
 
 //We are going to pay attention to the layering order of the objects so that if a mouse down occurs over more than object,
 //only the topmost one will be dragged.
 function mouseDownListener(evt) {
-    var highestIndex = -1;
 
     //getting mouse position correctly, being mindful of resizing that may have occured in the browser:
     var bRect = canvas.getBoundingClientRect();
@@ -67,13 +73,11 @@ function mouseDownListener(evt) {
 
         //We will pay attention to the point on the object where the mouse is "holding" the object:
         dragHoldX = mouseX - control.x;
-        dragHoldY = mouseY - control.y;
 
         targetX = mouseX - dragHoldX;
-        targetY = mouseY - dragHoldY;
             
         //start timer
-        timer = setInterval(onTimerTick, 1000/30);
+        requestAnimationFrame( onTimerTick );
     }
 
     if (dragging) {
@@ -93,27 +97,19 @@ function mouseDownListener(evt) {
     return false;
 }
 
+
 function onTimerTick() {
-    /*
-    Because of reordering, the dragging shape is the last one in the array.
-    The code below moves this shape only a portion of the distance towards the current "target" position, and 
-    because this code is being executed inside a function called by a timer, the object will continue to
-    move closer and closer to the target position.
-    The amount to move towards the target position is set in the parameter 'easeAmount', which should range between
-    0 and 1. The target position is set by the mouse position as it is dragging.        
-    */
     control.x = control.x + easeAmount*(targetX - control.x);
-    control.y = control.y + easeAmount*(targetY - control.y);
-    
-    //stop the timer when the target position is reached (close enough)
-    if ((!dragging) && (Math.abs(control.x - targetX) < 0.1) && (Math.abs(control.y - targetY) < 0.1)) {
-        control.x = targetX;
-        control.y = targetY;
-        //stop timer:
-        clearInterval(timer);
-    }
 
     drawScene();
+
+    //stop the timer when the target position is reached (close enough)
+    if ((!dragging) && (Math.abs(control.x - targetX) < 0.1)) {
+            //do nothing
+    }
+    else {
+        requestAnimationFrame( onTimerTick );
+    }
 }
 
 
@@ -128,29 +124,20 @@ function mouseUpListener(evt) {
 
 function mouseMoveListener(evt) {
     var posX;
-    // var posY;
-    var rad = control.radius;
 
     //Control can move around in the middle quarter of the canvas
-    var minX = (canvas.width * 3 / 8) + rad;
-    var maxX = (canvas.width * 5 / 8) - rad;
-    // var minY = rad;
-    // var maxY = canvas.height - rad;
+    var minX = (canvas.width * 2 / 8) + control.radius;
+    var maxX = (canvas.width * 6 / 8) - control.radius;
+
     //getting mouse position correctly 
     var bRect = canvas.getBoundingClientRect();
     mouseX = (evt.clientX - bRect.left)*(canvas.width/bRect.width);
-    // mouseY = (evt.clientY - bRect.top)*(canvas.height/bRect.height);
     
     //clamp x and y positions to prevent object from dragging outside of canvas
     posX = mouseX - dragHoldX;
     posX = (posX < minX) ? minX : ((posX > maxX) ? maxX : posX);
-    // posY = mouseY - dragHoldY;
-    // posY = (posY < minY) ? minY : ((posY > maxY) ? maxY : posY);
 
     targetX = posX;
-    // targetY = posY;
-    
-    // drawScene();
 }
 
 function drawText() {
@@ -160,22 +147,6 @@ function drawText() {
     ctx.fillText("BLISS ON TAP", canvas.width/2, canvas.height/3)
 }
 
-
-
-function makeScene() {
-    control = new Control(canvas.width / 2, canvas.height / 10);
-
-    function render() {
-        requestAnimationFrame( render );
-        // renderer.render( scene, camera );
-        drawScene();
-    }
-    // render();
-
-    setupBackgrounds();
-
-    drawScene();
-}
 
 function drawScene() {
     //bg
@@ -229,31 +200,19 @@ function setupBackgrounds() {
     },
     ];
 
+
     for (var i = 0; i < BackgroundList.length; i++) {
-        var background = createBackground(BackgroundList[i]);
+        var background = new Background( BackgroundList[i].speed, new Sprite(BackgroundList[i].sprite), BackgroundList[i].color);
         backgrounds.push(background);
     }
 }
-
-function createBackground(background) {
-    return new Background(background.speed,new Sprite(background.sprite),background.color);
-}
-
-
-function Background(speed, sprite, color) {
-    // this.ThreeObject = obj || MasterObject;
-    this.Speed = speed || 1.0;
-    this.Sprite = sprite || new Sprite;
-    this.Color = color || new RGBA(Math.round(255 * Math.random()),Math.round(255 * Math.random()),Math.round(255 * Math.random()),1);
-}
-
 
 
 function drawBackground(background) {
     var points = background.Sprite.Points;
 
+    //for parallaxing
     var offsetX = (control.x - (canvas.width / 2)) * background.Speed;
-
 
     ctx.beginPath();
 
@@ -270,8 +229,6 @@ function drawBackground(background) {
     ctx.lineTo(offsetX + 1500 * scale.x, 1500 * scale.y);
 
     ctx.closePath();
-
     ctx.fillStyle = background.Color.toString();
-
     ctx.fill();
 }
