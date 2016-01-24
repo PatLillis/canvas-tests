@@ -111,11 +111,11 @@ var dream_magnet = [
 ];
 
 var sex_n_roll = [
-    { color: new RGBA(28,1,19), weight: 55 },
-    { color: new RGBA(107,1,3), weight: 4 },
-    { color: new RGBA(163,0,6), weight: 4 },
-    { color: new RGBA(194,26,1), weight: 4 },
-    { color: new RGBA(240,60,2), weight: 59 }
+    // { color: new RGBA(28,1,19), weight: 5 },
+    { color: new RGBA(107,1,3), weight: 20 },
+    { color: new RGBA(163,0,6), weight: 30 },
+    { color: new RGBA(194,26,1), weight: 40 },
+    { color: new RGBA(240,60,2), weight: 50 }
 ];
 
 // var palettes = [dream_magnet];
