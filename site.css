@@ -75,3 +75,15 @@ html, body {
     cursor: pointer;
     margin-bottom: 5px;
 }
+
+
+@media (max-width: 599px) {
+	.content .container > .width-resize {
+		width: 100%;
+	}
+
+	.site a {
+		margin-left: 15px;
+		margin-right: 15px;
+	}
+}
