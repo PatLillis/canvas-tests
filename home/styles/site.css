@@ -1,3 +1,5 @@
+/*custom fonts - Bitter, Montserrat*/
+@import url('http://fonts.googleapis.com/css?family=Montserrat|Bitter');
 
 html {
 	height: 100%;
@@ -19,14 +21,34 @@ body {
   box-sizing:  border-box;
 }
 
-/*custom fonts - Bitter, Montserrat*/
-@import url('http://fonts.googleapis.com/css?family=Montserrat|Bitter');
 
-/*basic reset*/
+* {
+   -moz-user-select: -moz-none;
+   -khtml-user-select: none;
+   -webkit-user-select: none;
+
+   /*
+     Introduced in IE 10.
+     See http://ie.microsoft.com/testdrive/HTML5/msUserSelect/
+   */
+   -ms-user-select: none;
+   user-select: none;
+   cursor: default;
+} 
+
 
 h1 {
-  font: normal 32px/32px Bitter; color: white;
-  text-align: center; padding: 85px 100px;
+  font: normal 128px Montserrat;
+  color: #34b3a0;
+  text-align: center;
+  padding: 85px 0 0;
+}
+
+h3 {
+  font: normal 32px Montserrat;
+  color: #34b3a0;
+  text-align: center;
+  padding: 0;
 }
 
 /*.ink styles - the elements which will create the ripple effect. The size and position of these elements will be set by the JS code. Initially these elements will be scaled down to 0% and later animated to large fading circles on user click.*/
@@ -35,7 +57,7 @@ h1 {
   background: #34b3a0;
   border-radius: 100%;
   transform: scale(0);
-  transition: transform 5.5s ease-out, opacity 0.3s ease-in;
+  transition: transform 5.5s ease-out, opacity 0.2s ease-in;
 }
 
 
@@ -46,3 +68,27 @@ h1 {
   -ms-transition: none !important;
   transition: none !important;
 }
+
+@media (max-width: 992px) {
+  h1 {
+    padding-top: 30px;
+  }
+}
+
+@media (max-width: 768px) {
+  h1 {
+    font-size: 64px;
+  }
+
+  h3 {
+    font-size: 24px;
+  }
+}
+
+@media (max-width: 350px) {
+  h1 {
+    font-size: 48px;
+  }
+}
+
+

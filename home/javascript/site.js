@@ -80,7 +80,8 @@ function init() {
     });
 
 
-    var soundNames = ['aisatsana_01'],
+    //Curently up to 27s
+    var soundNames = ['aisatsana_01', 'aisatsana_02', 'aisatsana_03'],
         loader = new PxLoader(),
         i, len, url;
 
@@ -94,12 +95,13 @@ function init() {
         loader.addSound(soundNames[i], url);
     }
 
+    var loadedSoundCount = 0;
+    var soundIndex = 0;
+
     // listen to load events 
     loader.addProgressListener(function(e) {
-
-        // show the icon once a sound has loaded 
-        var soundId = e.resource.sound.sID;
-        // $icon = $('#' + soundId).addClass('ready');
+        if (++loadedSoundCount < soundNames.length)
+            return;
 
         // play the sound when the icon is clicked 
         $("body").click(function() {
@@ -110,7 +112,7 @@ function init() {
             // highlight the icon while playing 
             $('body').addClass('playing');
 
-            soundManager.play(soundId, {
+            soundManager.play(soundNames[soundIndex], {
                 onfinish: function() {
                     $('.ink').css({
                         opacity: 0
@@ -120,6 +122,11 @@ function init() {
 
                     parent.css({
                         'border-color': color
+                    });
+
+                    $('#instructions').hide();
+                    $('#title').css({
+                        color: color
                     });
 
                     setTimeout(function() {
@@ -132,9 +139,12 @@ function init() {
                         $('.ink').removeClass('notransition'); // Re-enable transitions
 
                         $('body').removeClass('playing');
-                    }, 300);
+                    }, 200);
                 }
             });
+
+            //Increment sound index for next button click
+            soundIndex = (soundIndex + 1) % soundNames.length;
         });
     });
 
