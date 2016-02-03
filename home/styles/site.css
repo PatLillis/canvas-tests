@@ -11,9 +11,12 @@ body {
 	width: 100%;
 	color: #fff;
 	overflow: hidden;
-  border-top: 6px solid #34b3a0;
+  border-top: 10px solid;
+  border-bottom: 10px solid;
+  border-color: #34b3a0;
   position: relative;
   overflow: hidden;
+  box-sizing:  border-box;
 }
 
 /*custom fonts - Bitter, Montserrat*/
@@ -32,18 +35,14 @@ h1 {
   background: #34b3a0;
   border-radius: 100%;
   transform: scale(0);
-}
-/*animation effect*/
-.ink.animate {animation: ripple 0.65s linear;}
-@keyframes ripple {
-  /*scale the element to 250% to safely cover the entire link and fade it out*/
-  100% {opacity: 0; transform: scale(2.5);}
+  transition: transform 5.5s ease-out, opacity 0.3s ease-in;
 }
 
 
-
-
-
-
-
-
+.notransition {
+  -webkit-transition: none !important;
+  -moz-transition: none !important;
+  -o-transition: none !important;
+  -ms-transition: none !important;
+  transition: none !important;
+}
